@@ -1,0 +1,29 @@
+{
+  "name": "lotus-hub",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Lotus Hub — a premium media content discovery platform. Phase 1: foundation & design system.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "test:smoke": "esbuild scripts/smoke.test.tsx --bundle --platform=node --format=cjs --outfile=scripts/smoke.test.cjs --loader:.tsx=tsx --jsx=automatic --alias:@=./src --packages=external && node scripts/smoke.test.cjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "esbuild": "^0.24.2",
+    "jsdom": "^30.0.1",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.5"
+  }
+}
