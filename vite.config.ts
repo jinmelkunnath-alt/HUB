@@ -18,9 +18,38 @@ export default defineConfig({
     // The platform preview host is dynamic; allow all hosts in dev so the
     // live preview loads regardless of the assigned subdomain.
     allowedHosts: true,
+    // Proxy API requests to the Lotus Hub auth server so cookies stay
+    // same-origin during development.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8787',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     outDir: 'dist',
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Split third-party runtime from app code and isolate the (large,
+        // superadmin-only) admin dashboard so the primary bundle stays lean.
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (
+              id.includes('react-dom') ||
+              id.includes('/react/') ||
+              id.includes('scheduler')
+            ) {
+              return 'react'
+            }
+            if (id.includes('react-router')) return 'router'
+            return 'vendor'
+          }
+          if (id.includes('/src/pages/admin/')) return 'admin'
+          return undefined
+        },
+      },
+    },
   },
 })
