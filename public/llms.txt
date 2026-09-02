@@ -1,0 +1,26 @@
+# Lotus Hub
+
+> A premium media content discovery platform.
+
+Lotus Hub is a media content discovery platform that organizes films, images,
+documents and audio into a clean library. This document describes only
+information that is publicly available on the site.
+
+Browsing the library, accounts, downloads, archive passwords, token balances,
+purchase details and the admin console are private and require authentication;
+they are not described here and are never exposed publicly.
+
+## Public pages
+
+- [FAQ](https://lotus-hub.example/faq): Frequently asked questions about Lotus Hub.
+- [Contact](https://lotus-hub.example/contact): How to contact the Lotus Hub team.
+- [Terms of service](https://lotus-hub.example/terms): Terms that govern your use of Lotus Hub.
+- [Privacy policy](https://lotus-hub.example/privacy): How Lotus Hub handles your information.
+- [Cookies policy](https://lotus-hub.example/cookies): How cookies are used on Lotus Hub.
+
+## Notes for AI agents
+
+- The library and file listings are behind authentication and are not public.
+- Do not assume any content, download destinations, passwords or user data are
+  publicly accessible.
+- All operational and contact details are configured by the project owner.

@@ -2,14 +2,22 @@
   "name": "lotus-hub",
   "private": true,
   "version": "0.1.0",
-  "description": "Lotus Hub — a premium media content discovery platform. Phase 1: foundation & design system.",
+  "description": "Lotus Hub — a premium media content discovery platform. Production-ready.",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "npm run seo:files && vite",
+    "dev:api": "node server/index.js",
+    "seo:files": "node scripts/generate-seo.mjs",
+    "build": "npm run seo:files && tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "test:smoke": "esbuild scripts/smoke.test.tsx --bundle --platform=node --format=cjs --outfile=scripts/smoke.test.cjs --loader:.tsx=tsx --jsx=automatic --alias:@=./src --packages=external && node scripts/smoke.test.cjs"
+    "test:smoke": "esbuild scripts/smoke.test.tsx --bundle --platform=node --format=cjs --outfile=scripts/smoke.test.cjs --loader:.tsx=tsx --jsx=automatic --alias:@=./src --packages=external && node scripts/smoke.test.cjs",
+    "test:auth": "node scripts/test-auth.mjs",
+    "test:content": "esbuild scripts/content-ui.test.tsx --bundle --platform=node --format=cjs --outfile=scripts/content-ui.test.cjs --loader:.tsx=tsx --jsx=automatic --alias:@=./src --packages=external && node scripts/content-ui.test.cjs",
+    "test:admin-ui": "esbuild scripts/admin-ui.test.tsx --bundle --platform=node --format=cjs --outfile=scripts/admin-ui.test.cjs --loader:.tsx=tsx --jsx=automatic --alias:@=./src --packages=external && node scripts/admin-ui.test.cjs",
+    "test:public-pages": "esbuild scripts/public-pages.test.tsx --bundle --platform=node --format=cjs --outfile=scripts/public-pages.test.cjs --loader:.tsx=tsx --jsx=automatic --alias:@=./src --packages=external && node scripts/public-pages.test.cjs",
+    "test:e2e": "esbuild scripts/test-ui.mjs --bundle --platform=node --format=esm --outfile=scripts/test-ui.bundle.mjs --jsx=automatic --packages=external --alias:@=./src && node scripts/run-e2e.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

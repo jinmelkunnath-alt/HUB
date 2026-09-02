@@ -18,15 +18,16 @@ globalThis.MouseEvent = window.MouseEvent
 globalThis.Node = window.Node
 globalThis.Element = window.Element
 globalThis.HTMLInputElement = window.HTMLInputElement
-// jsdom lacks some layout APIs used by libraries
 // @ts-expect-error stub
-globalThis.SVGElement = window.SVGElement
-if (!window.matchMedia) {
-  // @ts-expect-error stub
-  window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} })
-}
+window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} })
 // @ts-expect-error jsdom lacks scrollTo
 window.scrollTo = () => {}
+
+// No real backend in the smoke test: auth resolves to anonymous.
+// @ts-expect-error stub fetch (fails fast so auth becomes anonymous)
+globalThis.fetch = async () => {
+  throw new TypeError('network unavailable in smoke test')
+}
 
 const consoleErrors: string[] = []
 const origError = console.error
@@ -34,15 +35,40 @@ console.error = (...args: unknown[]) => {
   consoleErrors.push(args.map(String).join(' '))
 }
 
-const ROUTES = [
-  '/', '/browse', '/categories', '/file/1', '/tokens', '/profile',
-  '/faq', '/contact', '/terms', '/privacy', '/cookies',
-  '/login', '/register',
-  '/Admin/admin', '/Admin/admin/files', '/Admin/admin/categories',
-  '/Admin/admin/users', '/Admin/admin/topups', '/Admin/admin/analytics',
-  '/Admin/admin/audit', '/Admin/admin/settings',
-  '/error/401', '/error/403', '/error/429', '/error/500',
-  '/error/502', '/error/503', '/offline', '/this-route-does-not-exist',
+/** Routes expected to be accessible WITHOUT login (public). */
+const PUBLIC: Array<[string, string]> = [
+  ['/login', 'Welcome back'],
+  ['/register', 'Create your account'],
+  ['/faq', 'Frequently asked questions'],
+  ['/contact', 'Contact us'],
+  ['/terms', 'Terms of service'],
+  ['/privacy', 'Privacy policy'],
+  ['/cookies', 'Cookies policy'],
+]
+
+/** Routes that MUST require login (protected → Sign In Required gate). */
+const PROTECTED = [
+  '/',
+  '/browse',
+  '/categories',
+  '/file/1',
+  '/tokens',
+  '/profile',
+  '/Admin/admin',
+  '/Admin/admin/files',
+]
+
+/** Error/system routes that render standalone branded pages. */
+const ERROR_ROUTES = [
+  ['/error/401', 'Sign In Required'],
+  ['/error/403', 'Access Denied'],
+  ['/error/404', 'Page not found'],
+  ['/error/429', 'Too many requests'],
+  ['/error/500', 'Something went wrong'],
+  ['/error/502', 'Service temporarily unavailable'],
+  ['/error/503', 'Service under maintenance'],
+  ['/offline', 'No internet connection'],
+  ['/session-expired', 'Session Expired'],
 ]
 
 async function main() {
@@ -53,20 +79,52 @@ async function main() {
   const root = createRoot(document.getElementById('root')!)
   root.render(React.createElement(App))
 
-  await new Promise((r) => setTimeout(r, 100))
+  // Let auth resolve (fetch fails → anonymous) before navigating.
+  await new Promise((r) => setTimeout(r, 200))
 
   const failures: string[] = []
-  for (const route of ROUTES) {
-    // @ts-expect-error router.navigate exists
+
+  const text = () => document.body.textContent ?? ''
+  const wait = () => new Promise((r) => setTimeout(r, 60))
+
+  for (const [route] of PUBLIC) {
+    // @ts-expect-error navigate
     router.navigate(route)
-    await new Promise((r) => setTimeout(r, 60))
-    const bodyText = document.body.textContent ?? ''
-    if (bodyText.length < 5) {
-      failures.push(`Route ${route} produced no visible content`)
+    await wait()
+    const t = text()
+    if (t.length < 5) failures.push(`PUBLIC ${route}: no content`)
+    if (t.includes('Sign In Required')) {
+      failures.push(`PUBLIC ${route}: unexpectedly gated`)
     }
   }
 
-  // Verify UI restrictions installed (contextmenu prevented)
+  for (const route of PROTECTED) {
+    // @ts-expect-error navigate
+    router.navigate(route)
+    await wait()
+    const t = text()
+    if (!t.includes('Sign In Required')) {
+      failures.push(`PROTECTED ${route}: did not show Sign In Required gate`)
+    }
+  }
+
+  for (const [route, expected] of ERROR_ROUTES) {
+    // @ts-expect-error navigate
+    router.navigate(route)
+    await wait()
+    const t = text()
+    if (!t.includes(expected)) {
+      failures.push(`ERROR ${route}: expected "${expected}"`)
+    }
+  }
+
+  // Unknown route → branded 404.
+  // @ts-expect-error navigate
+  router.navigate('/this-route-does-not-exist')
+  await wait()
+  if (!text().includes('Page not found')) failures.push('404 wildcard not shown')
+
+  // UI restrictions active (contextmenu suppressed).
   const e = new window.Event('contextmenu', { cancelable: true })
   const defaultPrevented = !window.document.dispatchEvent(e)
   if (!defaultPrevented) failures.push('contextmenu not suppressed')
@@ -75,11 +133,11 @@ async function main() {
 
   console.log('==== CONSOLE ERRORS ====')
   if (consoleErrors.length === 0) console.log('NONE')
-  else consoleErrors.forEach((e) => console.log(e))
+  else consoleErrors.forEach((x) => console.log(' - ' + x))
 
   console.log('\n==== RESULT ====')
   if (failures.length === 0 && consoleErrors.length === 0) {
-    console.log('PASS — all routes render, no console errors, UI restrictions active')
+    console.log('PASS — routing, access control, error pages & UI restrictions OK')
   } else {
     console.log('FAILURES:')
     failures.forEach((f) => console.log(' - ' + f))
