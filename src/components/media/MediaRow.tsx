@@ -1,19 +1,18 @@
 import { useRef, type ReactNode } from 'react'
-import type { MediaItem } from '@/types/media'
+import type { ContentItem } from '@/types/content'
 import { cn } from '@/utils/cn'
 import { MediaCard } from './MediaCard'
 
 interface MediaRowProps {
-  items: MediaItem[]
+  items: ContentItem[]
   className?: string
   /** Optional slot rendered when items is empty. */
   empty?: ReactNode
 }
 
 /**
- * Horizontally scrollable row of media cards, typical of discovery platforms.
- * Keeps keyboard scrolling via native overflow; arrow affordances are simple
- * and accessible.
+ * Horizontally scrollable row of content cards. Native overflow keeps it
+ * keyboard/mobile friendly; the arrow buttons are simple and accessible.
  */
 export function MediaRow({ items, className, empty }: MediaRowProps) {
   const scrollerRef = useRef<HTMLDivElement>(null)

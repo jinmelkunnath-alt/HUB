@@ -1,7 +1,11 @@
+import { lazy } from 'react'
 import { createBrowserRouter, Outlet } from 'react-router-dom'
+import RouteError from '@/pages/errors/RouteError'
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { AdminLayout } from '@/layouts/AdminLayout'
+import { RequireAuth } from '@/components/auth/RequireAuth'
+import { AdminRoute } from '@/components/auth/AdminRoute'
 
 // Public pages
 import Home from '@/pages/public/Home'
@@ -20,15 +24,13 @@ import Cookies from '@/pages/public/Cookies'
 import Login from '@/pages/auth/Login'
 import Register from '@/pages/auth/Register'
 
-// Admin pages
-import AdminOverview from '@/pages/admin/AdminOverview'
-import AdminFiles from '@/pages/admin/AdminFiles'
-import AdminCategories from '@/pages/admin/AdminCategories'
-import AdminUsers from '@/pages/admin/AdminUsers'
-import AdminTopups from '@/pages/admin/AdminTopups'
-import AdminAnalytics from '@/pages/admin/AdminAnalytics'
-import AdminAudit from '@/pages/admin/AdminAudit'
-import AdminSettings from '@/pages/admin/AdminSettings'
+// Admin pages (lazy-loaded — only fetched by the super admin console).
+const AdminOverview = lazy(() => import('@/pages/admin/AdminOverview'))
+const AdminFiles = lazy(() => import('@/pages/admin/AdminFiles'))
+const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'))
+const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
+const AdminTopups = lazy(() => import('@/pages/admin/AdminTopups'))
+const AdminAudit = lazy(() => import('@/pages/admin/AdminAudit'))
 
 // Error / system pages
 import Error401 from '@/pages/errors/Error401'
@@ -39,32 +41,51 @@ import Error500 from '@/pages/errors/Error500'
 import Error502 from '@/pages/errors/Error502'
 import Error503 from '@/pages/errors/Error503'
 import Offline from '@/pages/errors/Offline'
+import SessionExpired from '@/pages/errors/SessionExpired'
 
-/** Error pages need their own simple wrapper (no header/footer). */
+/** Error/system pages use a minimal wrapper (no header/footer). */
 function ErrorShell() {
   return <Outlet />
 }
 
+/**
+ * Routes.
+ *  - Public pages (login, register, faq, contact, terms, privacy, cookies) are
+ *    accessible without auth.
+ *  - Application/content pages are wrapped in <RequireAuth />.
+ *  - The admin dashboard is wrapped in <AdminRoute /> (server-enforced).
+ */
 export const router = createBrowserRouter(
   [
     {
       element: <PublicLayout />,
+      errorElement: <RouteError />,
       children: [
-        { path: '/', element: <Home /> },
-        { path: '/browse', element: <Browse /> },
-        { path: '/categories', element: <Categories /> },
-        { path: '/file/:id', element: <FileDetails /> },
-        { path: '/tokens', element: <Tokens /> },
-        { path: '/profile', element: <Profile /> },
+        // Public (no auth required)
         { path: '/faq', element: <FAQ /> },
         { path: '/contact', element: <Contact /> },
         { path: '/terms', element: <Terms /> },
         { path: '/privacy', element: <Privacy /> },
         { path: '/cookies', element: <Cookies /> },
+
+        // Protected application pages
+        {
+          element: <RequireAuth />,
+          errorElement: <RouteError />,
+          children: [
+            { path: '/', element: <Home /> },
+            { path: '/browse', element: <Browse /> },
+            { path: '/categories', element: <Categories /> },
+            { path: '/file/:id', element: <FileDetails /> },
+            { path: '/tokens', element: <Tokens /> },
+            { path: '/profile', element: <Profile /> },
+          ],
+        },
       ],
     },
     {
       element: <AuthLayout />,
+      errorElement: <RouteError />,
       children: [
         { path: '/login', element: <Login /> },
         { path: '/register', element: <Register /> },
@@ -72,16 +93,21 @@ export const router = createBrowserRouter(
     },
     {
       path: '/Admin/admin',
-      element: <AdminLayout />,
+      element: <AdminRoute />,
+      errorElement: <RouteError />,
       children: [
-        { index: true, element: <AdminOverview /> },
-        { path: 'files', element: <AdminFiles /> },
-        { path: 'categories', element: <AdminCategories /> },
-        { path: 'users', element: <AdminUsers /> },
-        { path: 'topups', element: <AdminTopups /> },
-        { path: 'analytics', element: <AdminAnalytics /> },
-        { path: 'audit', element: <AdminAudit /> },
-        { path: 'settings', element: <AdminSettings /> },
+        {
+          element: <AdminLayout />,
+          errorElement: <RouteError />,
+          children: [
+            { index: true, element: <AdminOverview /> },
+            { path: 'files', element: <AdminFiles /> },
+            { path: 'categories', element: <AdminCategories /> },
+            { path: 'users', element: <AdminUsers /> },
+            { path: 'topups', element: <AdminTopups /> },
+            { path: 'audit', element: <AdminAudit /> },
+          ],
+        },
       ],
     },
     {
@@ -94,6 +120,7 @@ export const router = createBrowserRouter(
         { path: '/error/502', element: <Error502 /> },
         { path: '/error/503', element: <Error503 /> },
         { path: '/offline', element: <Offline /> },
+        { path: '/session-expired', element: <SessionExpired /> },
         { path: '*', element: <Error404 /> },
       ],
     },

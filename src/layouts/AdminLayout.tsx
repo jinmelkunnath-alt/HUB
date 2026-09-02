@@ -1,17 +1,17 @@
+import { Suspense } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { LotusLogo } from '@/components/ui/LotusLogo'
+import { Loading } from '@/components/ui/Loading'
 import { useScrollToTop } from '@/hooks/useScrollToTop'
 import { cn } from '@/utils/cn'
 
 export const ADMIN_NAV = [
-  { label: 'Overview', to: '/Admin/admin' },
+  { label: 'Dashboard', to: '/Admin/admin' },
   { label: 'Files', to: '/Admin/admin/files' },
   { label: 'Categories', to: '/Admin/admin/categories' },
   { label: 'Users', to: '/Admin/admin/users' },
   { label: 'Token Top-ups', to: '/Admin/admin/topups' },
-  { label: 'Analytics', to: '/Admin/admin/analytics' },
   { label: 'Audit Logs', to: '/Admin/admin/audit' },
-  { label: 'Settings', to: '/Admin/admin/settings' },
 ] as const
 
 /**
@@ -50,11 +50,13 @@ export function AdminLayout() {
 
       <div className="admin-main">
         <header className="admin-topbar">
-          <span className="admin-topbar__title">Admin Console</span>
-          <span className="badge">Phase 1 · Preview</span>
+          <span className="admin-topbar__title">Super Admin Console</span>
+          <span className="badge badge-accent">Super Admin</span>
         </header>
         <main className="admin-content">
-          <Outlet />
+          <Suspense fallback={<Loading label="Loading module…" />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

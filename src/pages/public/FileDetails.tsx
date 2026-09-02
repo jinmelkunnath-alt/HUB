@@ -1,59 +1,104 @@
-import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { PageContainer } from '@/components/layout/PageContainer'
-import { MediaThumbnail, TYPE_LABEL } from '@/components/media/MediaThumbnail'
-import { Modal } from '@/components/ui/Modal'
-import { Button } from '@/components/ui/Button'
-import { ErrorPage } from '@/pages/errors/ErrorPage'
-import { getMediaById } from '@/services/mockData'
-import { formatBytes, formatDate } from '@/utils/format'
+import { MediaThumbnail } from '@/components/media/MediaThumbnail'
+import { MediaRow } from '@/components/media/MediaRow'
+import { MediaRowSkeleton } from '@/components/media/MediaStates'
+import { ContentMetadata } from '@/components/media/ContentMetadata'
+import { DownloadAccess } from '@/components/media/DownloadAccess'
+import { Loading } from '@/components/ui/Loading'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { TYPE_LABEL } from '@/config/content'
+import { useAsyncData } from '@/hooks/useAsyncData'
+import { usePageMeta } from '@/hooks/usePageMeta'
+import { fetchContent, fetchRelatedContent } from '@/services/content'
+import type { ContentItem } from '@/types/content'
 
 /**
- * File detail page — structural UI only.
- *
- * Authentication, token validation, downloads, ZIP password access and file
- * storage integration are intentionally NOT implemented in Phase 1.
+ * Content detail page. Presents content metadata and (Phase 4) the download-
+ * access flow: GET LINK → DOWNLOAD (free quota first, then purchased tokens)
+ * or the archive password for previously authorized files.
  */
 export default function FileDetails() {
-  const { id } = useParams<{ id: string }>()
-  const item = id ? getMediaById(id) : undefined
-  const [downloadOpen, setDownloadOpen] = useState(false)
+  const { id = '' } = useParams<{ id: string }>()
 
-  if (!item) {
+  const itemState = useAsyncData<ContentItem>(() => fetchContent(id), [id])
+  const relatedState = useAsyncData<{ items: ContentItem[] }>(
+    () => fetchRelatedContent(id),
+    [id],
+  )
+
+  usePageMeta(
+    itemState.data?.title ?? 'Content',
+    itemState.data?.description
+      ? itemState.data.description
+      : 'Content details on Lotus Hub.',
+  )
+
+  if (itemState.status === 'loading') {
     return (
-      <ErrorPage
-        code="404"
-        title="File not found"
-        message="We couldn’t find this file. It may have been removed or moved."
-        showHome={true}
-      />
+      <PageContainer>
+        <div className="file-loading">
+          <Loading label="Loading content…" />
+        </div>
+      </PageContainer>
     )
   }
 
-  const downloadPlanned = (
-    <div className="file-plan">
-      <h3>Download & access</h3>
-      <p>
-        Download authorization, token validation and ZIP password access will
-        become available in a later phase. For now this page only displays
-        structural information about the file.
-      </p>
-      <ul>
-        <li>Authentication &amp; session control</li>
-        <li>Token-based download validation</li>
-        <li>ZIP password protected bundles</li>
-        <li>External storage integration</li>
-      </ul>
-    </div>
-  )
+  if (itemState.status === 'error') {
+    const notFound = itemState.error?.includes('not available')
+    return (
+      <PageContainer>
+        <div className="file-status">
+          {notFound ? (
+            <EmptyState
+              title="Content not found"
+              message="This content may have been removed or is no longer available."
+              action={
+                <Link to="/browse" className="btn btn-primary">
+                  Browse the library
+                </Link>
+              }
+            />
+          ) : (
+            <ErrorState
+              title="Couldn’t load content"
+              message={
+                itemState.isUnauthenticated
+                  ? 'Your session has ended. Please sign in again.'
+                  : itemState.error ?? 'Something went wrong.'
+              }
+              action={
+                itemState.isUnauthenticated ? (
+                  <Link to="/login" className="btn btn-primary">
+                    Sign in
+                  </Link>
+                ) : (
+                  <button type="button" className="btn btn-secondary" onClick={itemState.retry}>
+                    Retry
+                  </button>
+                )
+              }
+            />
+          )}
+        </div>
+      </PageContainer>
+    )
+  }
+
+  const item = itemState.data!
+  const related = relatedState.data?.items ?? []
 
   return (
     <PageContainer>
-      <nav aria-label="Breadcrumb" className="breadcrumb">
-        <Link to="/browse">Browse</Link>
-        <span aria-hidden="true">/</span>
-        <span className="faint">{item.category}</span>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: 'Home', to: '/' },
+          { label: 'Browse', to: '/browse' },
+          { label: item.category },
+        ]}
+      />
 
       <div className="file-layout">
         <div className="file-poster">
@@ -62,7 +107,9 @@ export default function FileDetails() {
             type={item.type}
             title={item.title}
             rating={item.rating}
+            thumbnailUrl={item.thumbnailUrl}
             className="file-poster__thumb"
+            tall
           />
         </div>
 
@@ -71,59 +118,47 @@ export default function FileDetails() {
           <h1 className="file-info__title">{item.title}</h1>
           <p className="file-info__desc">{item.description}</p>
 
-          <dl className="file-meta">
-            <div>
-              <dt>Category</dt>
-              <dd>{item.category}</dd>
-            </div>
-            <div>
-              <dt>File size</dt>
-              <dd>{formatBytes(item.sizeBytes)}</dd>
-            </div>
-            <div>
-              <dt>Duration</dt>
-              <dd>{item.duration}</dd>
-            </div>
-            <div>
-              <dt>Added</dt>
-              <dd>{formatDate(item.addedAt)}</dd>
-            </div>
-            <div>
-              <dt>Rating</dt>
-              <dd>{item.rating}</dd>
-            </div>
-          </dl>
+          <ContentMetadata item={item} />
 
-          <div className="file-actions">
-            <Button size="lg" onClick={() => setDownloadOpen(true)}>
-              Download
-            </Button>
-            <Button size="lg" variant="secondary">
-              Add to list
-            </Button>
-          </div>
+          {item.tags.length > 0 && (
+            <div className="file-tags">
+              <span className="file-tags__label">Tags</span>
+              <div className="file-tags__list">
+                {item.tags.map((tag) => (
+                  <span key={tag} className="badge">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
-          <div className="file-notice">
-            <span className="badge">Phase 1</span>
-            <span className="file-notice__text">
-              Downloads are not yet available. This is structural UI only.
-            </span>
-          </div>
+          {/* Download access / free quota / token consumption (Phase 4). */}
+          <DownloadAccess key={item.id} fileId={item.id} />
         </div>
       </div>
 
-      <Modal
-        open={downloadOpen}
-        onClose={() => setDownloadOpen(false)}
-        title="Download"
-      >
-        {downloadPlanned}
-        <div style={{ marginTop: 16 }}>
-          <Button block variant="secondary" onClick={() => setDownloadOpen(false)}>
-            Close
-          </Button>
-        </div>
-      </Modal>
+      {/* Related content */}
+      <section className="file-related">
+        {relatedState.status === 'loading' ? (
+          <>
+            <div className="section-head">
+              <h2 className="section-title">Related</h2>
+            </div>
+            <MediaRowSkeleton count={4} />
+          </>
+        ) : related.length > 0 ? (
+          <>
+            <div className="section-head">
+              <h2 className="section-title">More from Lotus Hub</h2>
+              <Link to="/browse" className="section-link">
+                View all
+              </Link>
+            </div>
+            <MediaRow items={related} />
+          </>
+        ) : null}
+      </section>
     </PageContainer>
   )
 }

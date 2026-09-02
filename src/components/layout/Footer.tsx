@@ -47,7 +47,7 @@ export function Footer() {
 
         <div className="footer__bottom">
           <span>© {new Date().getFullYear()} {SITE_NAME}. All rights reserved.</span>
-          <span className="footer__phase">Phase 1 — Foundation</span>
+          <span>Made for discovery.</span>
         </div>
       </div>
     </footer>

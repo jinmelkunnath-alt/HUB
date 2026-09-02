@@ -1,52 +1,102 @@
 import { Link } from 'react-router-dom'
-import { ADMIN_NAV } from '@/layouts/AdminLayout'
+import { Loading } from '@/components/ui/Loading'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { useApi } from '@/hooks/useApi'
+import { usePageMeta } from '@/hooks/usePageMeta'
+import { fetchOverview } from '@/services/admin'
+import type { OverviewMetrics } from '@/types/admin'
 
-const STATS = [
-  { label: 'Total files', value: '24', delta: '+4 this week' },
-  { label: 'Categories', value: '4', delta: 'Stable' },
-  { label: 'Registered users', value: '0', delta: 'Auth pending' },
-  { label: 'Token top-ups', value: '0', delta: 'Not active yet' },
+const STATS: Array<{ key: keyof OverviewMetrics; label: string }> = [
+  { key: 'totalUsers', label: 'Total users' },
+  { key: 'activeUsers', label: 'Active users' },
+  { key: 'totalPublishedFiles', label: 'Published files' },
+  { key: 'totalFiles', label: 'Total files' },
+  { key: 'totalDownloadAuthorizations', label: 'Download authorizations' },
+  { key: 'totalCategories', label: 'Categories' },
+  { key: 'activeTokenBalance', label: 'Active token balance' },
+  { key: 'tokensAdded', label: 'Tokens added' },
+  { key: 'tokensConsumed', label: 'Tokens consumed' },
 ]
 
-/**
- * Admin overview dashboard — structural UI only.
- * No real data or operations are implemented in Phase 1.
- */
+/** Super Admin overview dashboard with accurate metrics from live data. */
 export default function AdminOverview() {
+  const state = useApi<OverviewMetrics>(() => fetchOverview(), [])
+  usePageMeta('Dashboard · Super Admin', 'Lotus Hub super admin overview.')
+
   return (
     <>
       <header className="admin-head">
-        <h1>Overview</h1>
+        <h1>Dashboard</h1>
         <p>
-          A professional dashboard for managing the Lotus Hub platform. All
-          modules below are placeholders for future functionality.
+          Overview of the Lotus Hub platform. All figures are computed live from
+          platform data.
         </p>
       </header>
 
-      <div className="admin-stats">
-        {STATS.map((s) => (
-          <div className="stat-card" key={s.label}>
-            <div className="stat-card__label">{s.label}</div>
-            <div className="stat-card__value">{s.value}</div>
-            <div className="stat-card__delta">{s.delta}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="admin-panel">
-        <h2 className="admin-panel__title">Admin modules</h2>
-        <p className="admin-panel__desc">
-          Each module will be fully implemented in later phases.
-        </p>
-        <div className="admin-module-grid">
-          {ADMIN_NAV.map((nav) => (
-            <Link key={nav.to} to={nav.to} className="admin-module">
-              <span className="admin-module__label">{nav.label}</span>
-              <span className="admin-module__status">Planned</span>
-            </Link>
-          ))}
+      {state.status === 'loading' && (
+        <div style={{ padding: 16 }}>
+          <Loading label="Loading overview…" />
         </div>
-      </div>
+      )}
+      {state.status === 'error' && (
+        <ErrorState
+          title="Couldn’t load the dashboard"
+          message={state.error ?? 'Something went wrong.'}
+          action={
+            state.isUnauthenticated ? (
+              <Link to="/login" className="btn btn-primary">
+                Sign in
+              </Link>
+            ) : (
+              <button type="button" className="btn btn-secondary" onClick={state.retry}>
+                Retry
+              </button>
+            )
+          }
+        />
+      )}
+
+      {state.status === 'success' && state.data && (
+        <>
+          <div className="admin-stats">
+            {STATS.map((s) => (
+              <div className="stat-card" key={s.key}>
+                <div className="stat-card__label">{s.label}</div>
+                <div className="stat-card__value">{state.data![s.key].toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="admin-panel">
+            <h2 className="admin-panel__title">Quick actions</h2>
+            <p className="admin-panel__desc">
+              Manage content, users and token balances.
+            </p>
+            <div className="admin-module-grid">
+              <Link to="/Admin/admin/files" className="admin-module">
+                <span className="admin-module__label">Files</span>
+                <span className="admin-module__status">Manage &amp; publish content</span>
+              </Link>
+              <Link to="/Admin/admin/categories" className="admin-module">
+                <span className="admin-module__label">Categories</span>
+                <span className="admin-module__status">Organize content</span>
+              </Link>
+              <Link to="/Admin/admin/users" className="admin-module">
+                <span className="admin-module__label">Users</span>
+                <span className="admin-module__status">Search &amp; manage accounts</span>
+              </Link>
+              <Link to="/Admin/admin/topups" className="admin-module">
+                <span className="admin-module__label">Token Top-ups</span>
+                <span className="admin-module__status">Add tokens after payment</span>
+              </Link>
+              <Link to="/Admin/admin/audit" className="admin-module">
+                <span className="admin-module__label">Audit Logs</span>
+                <span className="admin-module__status">Review admin actions</span>
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
     </>
   )
 }

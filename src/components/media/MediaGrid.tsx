@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react'
-import type { MediaItem } from '@/types/media'
+import type { ContentItem } from '@/types/content'
 import { cn } from '@/utils/cn'
 import { MediaCard } from './MediaCard'
 
 interface MediaGridProps {
-  items: MediaItem[]
+  items: ContentItem[]
   className?: string
   /** Rendered when the grid is empty. */
   empty?: ReactNode
 }
 
-/** Responsive grid of media cards. */
+/** Responsive grid of content cards. */
 export function MediaGrid({ items, className, empty }: MediaGridProps) {
   if (items.length === 0) {
     return <div className={className}>{empty ?? null}</div>

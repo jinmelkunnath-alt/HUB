@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { LotusMark } from '@/components/ui/LotusLogo'
 import { PageContainer } from '@/components/layout/PageContainer'
+import { usePageMeta } from '@/hooks/usePageMeta'
 
 interface ErrorPageProps {
   /** HTTP-style code shown to the user, e.g. "404". */
@@ -27,6 +28,7 @@ export function ErrorPage({
   showRetry = false,
   showHome = true,
 }: ErrorPageProps) {
+  usePageMeta(title, message)
   return (
     <PageContainer as="main" className="error-page">
       <div className="error-page__card">

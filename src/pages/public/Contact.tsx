@@ -1,103 +1,84 @@
-import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { PageContainer } from '@/components/layout/PageContainer'
-import { Button } from '@/components/ui/Button'
+import { usePageMeta } from '@/hooks/usePageMeta'
+import {
+  getContactLabel,
+  getContactDestination,
+  getGeneralContactHref,
+  isContactPlaceholder,
+} from '@/config/contact'
 
 /**
- * Contact page. The form is structural UI only — no submission/backend is
- * wired up in Phase 1.
+ * Public contact page. Contact is configuration-driven (email, Telegram or
+ * WhatsApp via VITE_CONTACT_*). No invented hours, addresses or staff names are
+ * shown — the operator supplies the real channel in configuration.
  */
 export default function Contact() {
-  const [submitted, setSubmitted] = useState(false)
+  usePageMeta(
+    'Contact',
+    'Contact the Lotus Hub team with questions, feedback or support requests.',
+  )
 
-  if (submitted) {
-    return (
-      <PageContainer>
-        <div className="contact-thanks">
-          <h1 className="page-title">Message received</h1>
-          <p className="page-subtitle">
-            Thanks for reaching out. In a later phase this form will connect to
-            a real messaging service — for now nothing was sent.
-          </p>
-        </div>
-      </PageContainer>
-    )
-  }
+  const label = getContactLabel()
+  const destination = getContactDestination()
+  const href = getGeneralContactHref()
+  const placeholder = isContactPlaceholder()
 
   return (
     <PageContainer>
-      <header className="browse-head">
+      <header className="static-head">
         <h1 className="page-title">Contact us</h1>
         <p className="page-subtitle">
-          Questions, feedback or suggestions? Send us a note. This form is
-          structural UI and does not send messages yet.
+          Questions, feedback or support requests? The Lotus Hub team is here to
+          help.
         </p>
       </header>
 
-      <div className="contact-layout">
-        <form
-          className="contact-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            setSubmitted(true)
-          }}
-        >
-          <div className="field">
-            <label className="field__label" htmlFor="name">
-              Name
-            </label>
-            <input id="name" className="input" required placeholder="Your name" />
-          </div>
-          <div className="field">
-            <label className="field__label" htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              className="input"
-              required
-              placeholder="you@example.com"
-            />
-          </div>
-          <div className="field">
-            <label className="field__label" htmlFor="subject">
-              Subject
-            </label>
-            <input id="subject" className="input" required placeholder="How can we help?" />
-          </div>
-          <div className="field">
-            <label className="field__label" htmlFor="message">
-              Message
-            </label>
-            <textarea
-              id="message"
-              className="textarea"
-              required
-              placeholder="Write your message…"
-            />
-          </div>
-          <Button type="submit">Send message</Button>
-          <p className="faint" style={{ marginTop: 12, fontSize: 13 }}>
-            Phase 1 — this form does not send real messages yet.
-          </p>
-        </form>
+      {placeholder && (
+        <div className="form-error" role="status">
+          Contact details have not been configured yet. The project owner must
+          set <code>VITE_CONTACT_METHOD</code> and its destination before going
+          live.
+        </div>
+      )}
 
-        <aside className="contact-info">
-          <h2 className="section-title">Other ways to reach us</h2>
+      <div className="contact-layout">
+        <div className="contact-info" style={{ gridRow: '1' }}>
+          <h2 className="section-title">Get in touch</h2>
           <ul>
             <li>
-              <span className="contact-info__label">Email</span>
-              <span>support@lotushub.example</span>
+              <span className="contact-info__label">Preferred channel</span>
+              <span>{label}</span>
             </li>
             <li>
-              <span className="contact-info__label">Hours</span>
-              <span>Mon–Fri, 9:00–18:00</span>
-            </li>
-            <li>
-              <span className="contact-info__label">Response time</span>
-              <span>Within 2 business days</span>
+              <span className="contact-info__label">Reach us at</span>
+              <span>{destination}</span>
             </li>
           </ul>
+          <div style={{ marginTop: 22 }}>
+            <a href={href} className="btn btn-primary" target="_blank" rel="noopener noreferrer">
+              Contact via {label}
+            </a>
+          </div>
+        </div>
+
+        <aside className="static-body">
+          <h2>What to include</h2>
+          <p>
+            To help us respond quickly, please share a short description of your
+            question or issue.
+          </p>
+          <h2>Buying tokens</h2>
+          <p>
+            To purchase tokens you’ll need your 6-digit Lotus Hub ID, which is
+            shown on your <Link to="/profile">profile</Link> and{' '}
+            <Link to="/tokens">Get Tokens</Link> pages after signing in.
+          </p>
+          <h2>Response times</h2>
+          <p>
+            We aim to respond within a couple of business days. Please avoid
+            including passwords or sensitive account details in your message.
+          </p>
         </aside>
       </div>
     </PageContainer>
