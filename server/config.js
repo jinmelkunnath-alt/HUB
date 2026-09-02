@@ -109,6 +109,26 @@ export const config = {
   token: {
     validityMs: Number(env.LOTUS_TOKEN_VALIDITY_MS || 14 * 24 * 60 * 60 * 1000),
   },
+
+  /**
+   * Persistent storage driver (Phase 9B migration seam).
+   *
+   *   - 'sqlite'    (default) — the existing, verified node:sqlite store.
+   *   - 'firestore' — Firestore via the Firebase Admin SDK. NOT yet fully wired
+   *     for live operation; enabling it before the data-access layer is
+   *     complete fails loudly (never silently misbehaves).
+   *
+   * SQLite remains the active default until the Firestore cutover is verified.
+   */
+  storage: {
+    driver: env.LOTUS_STORAGE_DRIVER === 'firestore' ? 'firestore' : 'sqlite',
+    /** Firestore project id (server-only). Fallback to ADC project id. */
+    projectId: env.LOTUS_FIREBASE_PROJECT_ID || env.GOOGLE_CLOUD_PROJECT || '',
+    /** Collection-name prefix lets a single project host dev/staging/prod. */
+    collectionPrefix: env.LOTUS_FIRESTORE_COLLECTION_PREFIX || '',
+    /** Set to host:port of the local Firestore emulator to use it (no creds). */
+    emulatorHost: env.FIRESTORE_EMULATOR_HOST || '',
+  },
 }
 
 export default config

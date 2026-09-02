@@ -20,6 +20,7 @@
     "test:e2e": "esbuild scripts/test-ui.mjs --bundle --platform=node --format=esm --outfile=scripts/test-ui.bundle.mjs --jsx=automatic --packages=external --alias:@=./src && node scripts/run-e2e.mjs"
   },
   "dependencies": {
+    "firebase-admin": "^12.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.0"

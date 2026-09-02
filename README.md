@@ -3,27 +3,23 @@
 A premium media content discovery platform — built as a clean, minimal, dark,
 cinematic web application.
 
-**Current phase: Phase 8 — Final deployment & production launch.**
+**Current phase: Phase 9B — Firestore storage migration (scaffold).**
 
 > Phase 1 established the foundation & design system. Phase 2 added real
 > authentication and access control. Phase 3 delivered the authenticated media
 > discovery experience. Phase 4 implemented real download authorization, a free
 > daily quota, purchased-token consumption and per-file archive-password access.
-> Phase 5 completed the user-facing token & account experience: an authoritative
-> token balance, a manual-purchase Get Tokens page, the read-only Profile page
-> with a prominent 6-digit Lotus Hub ID, and normal logout. Phase 6 added the
-> Super Admin dashboard: accurate live metrics, user search & account status,
-> safe manual token top-ups (separate 14-day batches with replay protection),
-> file/category content management, and an append-only audit log. Phase 7
-> hardens the app for production: per-page SEO metadata, sitemap/robots/llms,
-> structured data, social share imagery, error boundaries, security headers,
-> gentle rate limiting, code splitting, accurate public/legal pages, and full
-> deployment documentation. Phase 8 is the final launch-readiness phase: it
-> verifies the whole production audit, hardens the session cookie for HTTPS,
-> documents single-origin deployment, environment separation, database
-> security, backup/recovery, monitoring and a pre-launch checklist, and adds a
-> dedicated security review. Payments and external storage integration remain
-> for later phases.
+> Phase 5 completed the user-facing token & account experience. Phase 6 added
+> the Super Admin dashboard. Phase 7 hardened the app for production
+> (SEO/sitemap, security headers, error boundaries, code splitting, accurate
+> public pages). Phase 8 is the final launch-readiness phase (HTTPS session
+> cookie, single-origin deployment, backup/recovery/monitoring docs). Phase 9A
+> audited a Firebase + Telegram auth architecture (verdict: compatible with the
+> server-side model preserved). Phase 9B (current) adds the Firestore storage
+> scaffold — a driver seam, Firestore data model + guarded repository stubs and
+> migration design doc — while **SQLite remains the active default**. The live
+> Firestore cutover is not done until it passes the full test gate. Payments and
+> external storage integration remain for later phases.
 
 ## Stack
 

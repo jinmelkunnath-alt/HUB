@@ -21,10 +21,15 @@ Production Hosting / Edge (HTML, CSS, JS, /robots.txt, /sitemap.xml, /llms.txt)
 Backend / API (Node, standard library only)
         │
         ▼
-Database / Auth (SQLite by default; swap for a managed DB / KV at the data layer)
-        │
+Database / Auth (SQLite by default; a Firestore migration scaffold exists — see
+        │  docs/FIRESTORE_MIGRATION.md; SQLite stays active until the cutover verifies)
 Large files ─► External storage providers (Lotus Hub stores metadata only)
 ```
+
+> Storage driver: select with `LOTUS_STORAGE_DRIVER` (`sqlite` is the default and
+> currently the only live driver). A Firestore data layer scaffold lives in
+> `server/storage/`; see `docs/FIRESTORE_MIGRATION.md` before enabling
+> `LOTUS_STORAGE_DRIVER=firestore`.
 
 - The frontend is a client-rendered SPA. Public pages (`/faq`, `/contact`,
   `/terms`, `/privacy`, `/cookies`) are indexable. Everything else is behind
